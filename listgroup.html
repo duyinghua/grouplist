@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <style>
+        * { margin: 0; padding: 0; font-family: "\534E\6587\5B8B\4F53" }
+        .list_group { overflow: hidden; width: 500px; height: 500px; background: #eee; border: 1px #aaa solid; border-radius: 5px; margin: 100px auto; position: relative; top: 0; left: 0; -webkit-user-select: none; }
+        .list { width: 100%; position: absolute; top: 0; }
+        .float { position: absolute; left: 0; right: 0px; z-index: 1; top: 0; }
+        .title { height: 30px; line-height: 30px; font-size: 18px; font-weight: bold; background: #333; color: #fff; padding: 0 20px; }
+        .item { height: 50px; line-height: 50px; font-size: 32px; border-bottom: 1px #ccc solid; padding: 0 20px; }
+        .index { width: 20px; border-radius: 10px; background: rgba(128, 128, 128, 0.3); color: #333; text-align: center; position: absolute; right: 20px; top: 100px; cursor: pointer; }
+        .index b { display: block; height: 20px; line-height: 20px; }
+    </style>
+    <script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+    <script>
+        $.fn.listGroup = function () {
+            /**
+             *  检测当前list的位置时是第几group
+             * @param height  当前高度位置
+             * @param lih     group高度位置集合
+             * @returns {number}
+             */
+            function checkRange(height, lih) {
+                var res = 0;
+                for (var i = 0; i < lih.length; i++) {
+                    if (height >= lih[i]) {
+                        res = i;
+                    } else {
+                        return res;
+                    }
+                }
+                return res;
+            }
+
+            /**
+             *  对超出边界的判断矫正
+             * @param top                 待校验坐标
+             * @param listHeight          list高度
+             * @param listGroupHeight     list-group高度
+             * @returns {*}
+             */
+            function resetTop(top, listHeight, listGroupHeight) {
+                if (top > 0) {
+                    top = 0;
+                } else if (top < listGroupHeight - listHeight) {
+                    top = listGroupHeight - listHeight;
+                }
+                return top;
+            }
+
+            /**
+             * 获取index序号
+             * @param y 当前鼠标坐标
+             * @param inxOffy 序号栏屏幕偏移
+             * @returns {Number}
+             */
+            function getIndex(y, inxOffy) {
+                var h = y - inxOffy;
+                return parseInt(h / 20);
+            }
+
+            /**
+             * 移动list
+             * @param list  list对象
+             * @param gi    显示当前group号
+             * @param lih   group高度位置集合
+             */
+            function moveList(list, gi, lih) {
+                list.css({top: -lih[gi]});
+            }
+
+            this.each(function () {
+                var $this = $(this);
+                var flag = $this.children(".flag");
+                var $scrollList, listHeight = $this.children(".list").height(), listGroupHeight = $this.height();   //定义list对象并获取他的高度，获取list-group控件高度
+                var msOldy, listOldy = 0;       // 定义前一次鼠标y坐标，前一次list y坐标
+                var $lis = $this.children("ul").children();
+                // 定义并生成一个存放所有group的y坐标的数组
+                var lihArr = [];
+                $lis.each(function () {
+                    lihArr.push($(this).position().top);
+                });
+                $this.children(".list").bind("mousedown", function (ms) {
+                    $scrollList = $(this);
+                    msOldy = ms.pageY;
+                });
+                $(document).bind("mousemove", function (ms) {
+                    if ($scrollList) {            // 如果触发鼠标按下再监听鼠标移动
+                        //控制list移动，随着鼠标移动，list上下移动
+                        var msDiff = ms.pageY - msOldy;
+                        msOldy = ms.pageY;
+                        var scrollTop = parseInt($scrollList.css("top"));   //list y坐标高
+                        var resTop = scrollTop + msDiff;   // list 随鼠标位移的结果y坐标
+                        resTop = resetTop(resTop, listHeight, listGroupHeight);  //对超出边界的判断矫正
+                        $scrollList.css("top", resTop);
+
+                        var wt = checkRange(-resTop, lihArr);   // 获取当前list的位置时是第几group
+                        var curLi = $scrollList.children("li").eq(wt).children(".title");  //list下当前group的title
+                        var nextLi = $scrollList.children("li").eq(wt + 1).children(".title");  //list下后一个group的title
+
+                        flag.html(curLi.html());    // flag title内容替换当前title
+                        var listDiff = resTop - listOldy;
+                        listOldy = resTop;
+                        var flag_top = parseInt(flag.css("top")); // 获取flag的y坐标
+                        if (listDiff < 0) {    //list向上走
+                            var nextTity = nextLi.position().top + resTop; //下一个title的相对list坐标
+                            if (flag_top <= -29) {           //flag在这个范围内时定在listgroup头部
+                                flag.css("top", 0);
+                            }
+                            if (0 < nextTity && nextTity < 30) { //下一个title在这个范围内时flag向上移动
+                                flag.css("top", flag_top + listDiff);
+
+                            } else {
+                                flag.css("top", 0);
+                            }
+                        } else if (listDiff > 0) { //list 向下走
+                            var nextTity = nextLi.position().top + resTop;
+                            if (flag_top >= 0) {
+                                flag.css("top", -30);
+                                flag_top = -30;
+                            }
+                            if (0 < nextTity && nextTity < 30) {
+                                flag.css("top", flag_top + listDiff);
+                            } else {
+                                flag.css("top", 0);
+                            }
+                        }
+                    }
+                });
+                $(document).bind("mouseup", function () {
+                    $scrollList = false;
+                });
+                // 如果需要index栏
+                if ($this.attr("data-index") == "show") {
+                    // 动态生成index栏并添加到尾部
+                    var $index = $("<div class='index'></div>");
+                    var bArr = [];
+                    var $titles = $this.children(".list").find(".title");
+                    for (var i = 0; i < $titles.length; i++) {
+                        bArr.push("<b>" + $titles.eq(i).html() + "</b>");
+                    }
+                    $index.append(bArr.join(""));
+                    $this.append($index);
+
+                    var scrollIndex;// 是否正在滚动index
+                    $index.bind("mousedown", function (ms) {
+                        scrollIndex = true;
+                        var index = getIndex(ms.pageY, indexOffsetY);     // 得到当前组序号
+                        var bi = $index.children("b").eq(index).html();  // 获取当前组title内容
+                        flag.html(bi);
+                        moveList($this.children(".list"), index, lihArr);   // 移动list到显示当前组
+                    });
+                    var indexOffsetY = $index.offset().top;
+                    $(document).bind("mousemove", function (ms) {
+                        if (scrollIndex) {
+                            var index = getIndex(ms.pageY, indexOffsetY);
+                            var bi = $index.children("b").eq(index).html();
+                            flag.html(bi);
+                            moveList($this.children(".list"), index, lihArr);
+                        }
+                    });
+                    $(document).bind("mouseup", function () {
+                        scrollIndex = false;
+                    });
+                }
+            });
+        }
+        $(function () {
+            $(".list_group").listGroup();
+        })
+
+
+    </script>
+</head>
+<body>
+<div class="list_group" data-index="show">
+    <div class="flag float title">A</div>
+    <ul class="list">
+        <li>
+            <p class="title">A</p>
+
+            <div class="item">apple</div>
+            <div class="item">axic</div>
+            <div class="item">anny</div>
+            <div class="item">ajax</div>
+            <div class="item">adidas</div>
+        </li>
+        <li>
+            <p class="title">B</p>
+
+            <div class="item">bad</div>
+            <div class="item">black</div>
+            <div class="item">bob</div>
+            <div class="item">backham</div>
+            <div class="item">brown</div>
+            <div class="item">banana</div>
+        </li>
+        <li>
+            <p class="title">C</p>
+
+            <div class="item">catch</div>
+            <div class="item">cate</div>
+            <div class="item">cake</div>
+            <div class="item">class</div>
+            <div class="item">common</div>
+            <div class="item">cinima</div>
+            <div class="item">cygnt</div>
+        </li>
+        <li>
+            <p class="title">D</p>
+
+            <div class="item">dark</div>
+            <div class="item">digital</div>
+            <div class="item">dress</div>
+            <div class="item">dicalong</div>
+            <div class="item">disdalin</div>
+        </li>
+        <li>
+            <p class="title">E</p>
+
+            <div class="item">egg</div>
+            <div class="item">email</div>
+            <div class="item">elisis</div>
+        </li>
+        <li>
+            <p class="title">F</p>
+
+            <div class="item">float</div>
+            <div class="item">flang</div>
+            <div class="item">filing</div>
+            <div class="item">flangsis</div>
+            <div class="item">font</div>
+        </li>
+        <li>
+            <p class="title">G</p>
+
+            <div class="item">grass</div>
+            <div class="item">guess</div>
+            <div class="item">group</div>
+            <div class="item">google</div>
+            <div class="item">good</div>
+            <div class="item">gank</div>
+            <div class="item">gubage</div>
+        </li>
+        <li>
+            <p class="title">H</p>
+
+            <div class="item">high</div>
+            <div class="item">height</div>
+            <div class="item">hair</div>
+            <div class="item">handle</div>
+            <div class="item">humer</div>
+            <div class="item">helper</div>
+            <div class="item">hynex</div>
+        </li>
+        <li>
+            <p class="title">I</p>
+
+            <div class="item">ipad</div>
+            <div class="item">ibot</div>
+            <div class="item">iphone</div>
+        </li>
+    </ul>
+</div>
+
+</body>
+</html>

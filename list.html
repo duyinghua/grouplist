@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <style>
+        * { margin: 0; padding: 0; font-family: "\534E\6587\5B8B\4F53" }
+        .box { overflow: hidden; width: 500px; height: 500px; background: #eee; border: 1px #aaa solid; border-radius: 5px; margin: 100px auto; position: relative; top: 0; left: 0; -webkit-user-select: none; }
+        .list { width: 100%; position: absolute; top: 0; }
+        .float { position: absolute; left: 0; right: 0px; z-index: 1; top: 0; }
+        .title { height: 30px; line-height: 30px; font-size: 18px; font-weight: bold; background: #333; color: #fff; padding: 0 20px; }
+        .item { height: 50px; line-height: 50px; font-size: 32px; border-bottom: 1px #ccc solid; padding: 0 20px; }
+    </style>
+    <script src="jquery.js"></script>
+    <script>
+        $(function () {
+            var flag = $("#flag");
+            var $scrolllist, listHeight;
+            var msOldy, listOldy = 0;
+
+            var lih = []
+            $(".box li").each(function () {
+                lih.push($(this).position().top);
+            })
+            function checkRange(num) {
+                var res = 0;
+                for (var i = 0; i < lih.length; i++) {
+                    if (num >= lih[i]) {
+                        res = i;
+                    } else {
+                        return res;
+                    }
+                }
+                return res;
+            }
+
+            function resetTop(top) {
+                if (top > 0) {
+                    top = 0;
+                } else if (top < 500 - listHeight) {
+                    top = 500 - listHeight;
+                }
+                return top;
+            }
+
+            $(".list").bind("mousedown", function (ms) {
+                $scrolllist = $(this);
+                listHeight = $scrolllist.height();
+                msOldy = ms.pageY;
+            });
+            $(document).bind("mousemove", function (ms) {
+                if ($scrolllist) {
+                    //控制list
+                    var msDiff = ms.pageY - msOldy;
+                    msOldy = ms.pageY;
+                    var scrollTop = parseInt($scrolllist.css("top"));
+                    var resTop = scrollTop + msDiff;
+                    resTop = resetTop(resTop);
+                    $scrolllist.css("top", resTop);
+                    var wt = checkRange(-resTop);
+                    var curLi = $scrolllist.children("li").eq(wt).children(".title");
+                    var nextLi = $scrolllist.children("li").eq(wt + 1).children(".title");
+
+                    flag.html(curLi.html());
+                    var listDiff = resTop - listOldy;
+                    listOldy = resTop;
+                    var flag_top = parseInt(flag.css("top"));
+                    if (listDiff < 0) {    //list向上走
+                        var nextTity = nextLi.position().top + resTop;
+                        if (flag_top <= -29) {
+                            flag.css("top", 0);
+                        }
+                        if (0 < nextTity && nextTity < 30) {
+                            flag.css("top", flag_top + listDiff);
+
+                        } else {
+                            flag.css("top", 0);
+                        }
+                    } else if (listDiff > 0) { //list 向下走
+                        var nextTity = nextLi.position().top + resTop;
+                        if (flag_top >= 0) {
+                            flag.css("top", -30);
+                            flag_top = -30;
+                        }
+                        if (0 < nextTity && nextTity < 30) {
+                            flag.css("top", flag_top + listDiff);
+                        } else {
+                            flag.css("top", 0);
+                        }
+                    }
+                }
+            });
+            $(document).bind("mouseup", function () {
+                $scrolllist = false;
+            });
+        })
+
+
+    </script>
+</head>
+<body>
+<div class="box">
+    <div id="flag" class="float title">A</div>
+    <ul class="list">
+        <li data-title="a">
+            <p class="title">A</p>
+
+            <div class="item">apple</div>
+            <div class="item">axic</div>
+            <div class="item">anny</div>
+            <div class="item">ajax</div>
+            <div class="item">adidas</div>
+        </li>
+        <li data-title="b">
+            <p class="title">B</p>
+
+            <div class="item">bad</div>
+            <div class="item">black</div>
+            <div class="item">bob</div>
+            <div class="item">backham</div>
+            <div class="item">brown</div>
+            <div class="item">banana</div>
+        </li>
+        <li data-title="c">
+            <p class="title">C</p>
+
+            <div class="item">catch</div>
+            <div class="item">cate</div>
+            <div class="item">cake</div>
+            <div class="item">class</div>
+            <div class="item">common</div>
+            <div class="item">cinima</div>
+            <div class="item">cygnt</div>
+        </li>
+        <li data-title="d">
+            <p class="title">D</p>
+
+            <div class="item">dark</div>
+            <div class="item">digital</div>
+            <div class="item">dress</div>
+            <div class="item">dicalong</div>
+            <div class="item">disdalin</div>
+        </li>
+    </ul>
+</div>
+</body>
+</html>
